@@ -1,0 +1,63 @@
+.super-select {
+	position: relative;
+}
+
+.super-select select {
+	position:absolute;
+	top:0;
+	right:100%;
+	opacity:0;
+}
+
+.super-select .dropdown-container {
+	display:inline-block
+}
+
+.super-select .dropdown-container.open .dropdown-toggle, 
+.super-select .dropdown-toggle, 
+.super-select .dropdown-toggle:hover,
+.super-select .dropdown-toggle:focus {
+	background-color: #FFF;
+	border-radius: 0;
+	box-shadow: none;
+	font-size: 16px;
+	color: #232D31;
+	padding: 0;
+}
+
+.super-select .button-span { 
+	background-color: #FFF;
+	border: 2px solid #CDD6D3;
+	border-radius: 2px; 
+	padding: 6px;
+}
+
+.super-select .dropdown-toggle {
+	text-overflow: ellipsis;
+	width: 60px;
+	overflow: hidden;
+	border: none;
+}
+
+
+.super-select .dropdown-toggle .caret {
+	position: absolute;
+	right: 4px;
+	top: 55%;
+	-webkit-transform: translateY(-50%);
+	transform: translateY(-50%);
+}
+
+.super-select .dropdown-toggle:focus {
+	border-color: #C5d9b0;
+}
+
+#superSelect_dropdownHolder {
+	position: absolute;
+	z-index: 9999999973;
+}
+
+#superSelect_dropdownHolder .dropdown-menu {
+	display: block;
+	position: static;
+}
