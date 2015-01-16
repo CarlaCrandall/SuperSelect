@@ -21,10 +21,9 @@
     <div is-open="status.isOpen"  class="btn-group dropdown-container" dropdown on-toggle="onOpen()">
         
         <!-- Toggle -->
-        <span class="button-span">
+        <span class="button-span" dropdown-toggle>
             <button type="button" 
                     class="btn btn-primary dropdown-toggle" 
-                    dropdown-toggle 
                     ng-disabled="disabled">
                 {{selectData[selectModel]}} 
             </button>

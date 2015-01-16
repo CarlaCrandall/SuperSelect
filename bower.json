@@ -1,0 +1,28 @@
+{
+  "name": "SuperSelect",
+  "version": "0.1.0",
+  "homepage": "https://github.com/CarlaCrandall/SuperSelect",
+  "authors": [
+    "(Carla Crandall <carlalcrandall@gmail.com>)",
+    "(Robert Inglin <robert@ingl.in>)"
+  ],
+  "description": "SuperSelect is an angular bootstrap select element replacement",
+  "moduleType": [
+    "globals"
+  ],
+  "keywords": [
+    "angular",
+    "bootstrap",
+    "select",
+    "dropdown"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "assets/scripts/vendor",
+    "test",
+    "tests"
+  ]
+}
