@@ -9,11 +9,11 @@
 	opacity:0;
 }
 
-.super-select .dropdown-container {
+.super-select.dropdown-container {
 	display:inline-block
 }
 
-.super-select .dropdown-container.open .dropdown-toggle, 
+.super-select.dropdown-container.open .dropdown-toggle, 
 .super-select .dropdown-toggle, 
 .super-select .dropdown-toggle:hover,
 .super-select .dropdown-toggle:focus {
@@ -38,6 +38,7 @@
 	width: 60px;
 	overflow: hidden;
 	border: none;
+	text-align: left;
 }
 
 

@@ -1,50 +1,50 @@
 <!-- Super Select -->
-<span ng-keydown="onKeydown( $event )" class="super-select">
-    
+<div is-open="status.isOpen" 
+        ng-keydown="onKeydown( $event )"  
+        class="super-select btn-group dropdown-container" 
+        dropdown 
+        on-toggle="onOpen()">
+
+    <!-- Toggle -->
+    <span class="button-span" dropdown-toggle
+                ng-class="{ disabled : selectDisabled }">
+        <button type="button" 
+                class="btn btn-primary dropdown-toggle" 
+                ng-disabled="selectDisabled"
+                ng-focus="populateSelect(true)">
+            {{selectData[selectModel]}} 
+        </button>
+        <span class="caret"></span>
+    </span>
+    <!-- End Toggle -->
+
     <!-- Select -->
     <select class="realSelect"
             ng-keyup="onKeyup( $event )"
             ng-focus="onSelectFocus()" 
             ng-model="selectModel" 
-            ng-options="val as text for ( val, text ) in selectData">
+            ng-options="val as text for ( val, text ) in realData">
     </select>
     <!-- End Select -->
 
     <!-- Select -->
-    <select class="fakeSelect"
+    <select ng-if="status.isOpen"
+            class="fakeSelect"
             ng-model="fakeModel"
             ng-options="val as text for ( val, text ) in selectData">
     </select>
     <!-- End Select -->
-    
-    <!-- Bootstrap Dropdown -->
-    <div is-open="status.isOpen"  class="btn-group dropdown-container" dropdown on-toggle="onOpen()">
-        
-        <!-- Toggle -->
-        <span class="button-span" dropdown-toggle>
-            <button type="button" 
-                    class="btn btn-primary dropdown-toggle" 
-                    ng-disabled="disabled">
-                {{selectData[selectModel]}} 
-            </button>
-            <span class="caret"></span>
-        </span>
-        
-        <!-- End Toggle -->
-        
-        <!-- Dropdown Menu -->
-        <ul class="dropdown-menu" role="menu">
-            <li class="search-option" 
-                ng-repeat="(val, text) in selectData" 
-                ng-attr-data-option="{{val}}"  
-                ng-click="selectOption(val)">
-                <a href="#" ng-bind="text"></a>
-            </li>
-        </ul>
-        <!-- End Dropdown Menu -->
 
-    </div>
-    <!-- End Bootstrap Dropdown -->
+    <!-- Dropdown Menu -->
+    <ul class="dropdown-menu" role="menu" ng-if="status.isOpen">
+        <li class="search-option" 
+            ng-repeat="(val, text) in selectData" 
+            ng-attr-data-option="{{val}}"  
+            ng-click="selectOption(val)">
+            <a href="#" ng-bind="text"></a>
+        </li>
+    </ul>
+    <!-- End Dropdown Menu -->
 
-</span>
+</div>
 <!-- End Super Select -->

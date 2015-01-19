@@ -8,13 +8,15 @@ superSelect.directive( 'superSelect', function( ){
             scope: {
                 selectData: '=',
                 selectModel: '=',
-                selectLabel: '@'
+                selectLabel: '@',
+                selectDisabled: '='
             },
             controller: [ '$scope', '$element', '$timeout', '$window', 
             
                 function( $scope, $element, $timeout, $window ) {
 
                 $scope.fakeModel = '';
+                $scope.realData = {};
 
                 $scope.status = {
                     isOpen: false,
@@ -36,7 +38,13 @@ superSelect.directive( 'superSelect', function( ){
 
                 
                 $scope.selectOption = function( val ) {
+
                     $scope.selectModel = val;
+                }
+
+                $scope.populateSelect = function( focus ) {
+
+                    $scope.realData = $scope.selectData;
                 }
 
                 $scope.onKeyup = function( $event ) {
@@ -52,6 +60,7 @@ superSelect.directive( 'superSelect', function( ){
                 $scope.onKeydown = function( $event ) {
 
                     var e = $event,
+                        $target = e.target,
                         nextTab;
                     
                     switch ( e.keyCode ) {
@@ -71,7 +80,10 @@ superSelect.directive( 'superSelect', function( ){
 
                             case KeyCodes.ESCAPE:
 
-                                $target.blur();
+                                $timeout( function () {
+                                    $element.find( 'button' )[0].focus();
+                                }, 100);
+
                                 break;
 
                             case KeyCodes.UPARROW:
@@ -130,9 +142,8 @@ superSelect.directive( 'superSelect', function( ){
 
                 $scope.onOpen = function() {
                     $scope.status.currentVal = $scope.selectModel;
-                    if( $scope.fakeModel == '' ){
-                        $scope.fakeModel = $scope.selectModel;
-                    }
+                    $scope.fakeModel = $scope.selectModel;
+                    
                     
                     $timeout(function () {
                         
@@ -216,7 +227,7 @@ superSelect.directive( 'superSelect', function( ){
                         } 
                         else {
 
-                            next = $element[0].querySelector( '.fakeSelect option[value="' + $element[0].querySelector( '.fakeSelect' ).value + '"]' );;
+                            next = currentOption;//$element[0].querySelector( '.fakeSelect option[value="' + $element[0].querySelector( '.fakeSelect' ).value + '"]' );;
                         }
 
                         if( next ) {
