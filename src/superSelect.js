@@ -34,7 +34,10 @@ superSelect.directive( 'superSelect', function( ){
                         RIGHTARROW : 39,
                         DOWNARROW : 40,
                     },
-                    menuContainer = angular.element( document.querySelector( '#superSelect_dropdownHolder' ) );
+                    menuContainer = angular.element( document.querySelector( '#superSelect_dropdownHolder' ) ),
+                    keyChange = false,
+                    keyTimeout = null
+                    keyTimeoutLength = 1000;
 
                 
                 $scope.selectOption = function( val ) {
@@ -76,7 +79,24 @@ superSelect.directive( 'superSelect', function( ){
 
                             //Make sure the spacebar doesn't activate the select
                             case KeyCodes.SPACEBAR: 
-                                break;
+
+                                if( $scope.status.isOpen ) {
+                                    if( !keyChange ) {
+
+                                        $scope.status.isOpen = false;
+                                        $scope.selectModel = $scope.status.currentVal;
+                                        $timeout( function () {
+                                            $element.find( 'button' )[0].focus();
+                                        }, 100);
+                                    
+                                    } else {
+
+                                        resetKeyChangeTimeout();
+                                    }
+                                }
+
+                                return true;
+                                // break;
 
                             case KeyCodes.ESCAPE:
 
@@ -131,6 +151,8 @@ superSelect.directive( 'superSelect', function( ){
                                 }
                                 else {
 
+                                    resetKeyChangeTimeout();
+
                                     $element[0].querySelector( '.fakeSelect' ).focus();
                                 }
                                 
@@ -143,7 +165,8 @@ superSelect.directive( 'superSelect', function( ){
                 $scope.onOpen = function() {
                     $scope.status.currentVal = $scope.selectModel;
                     $scope.fakeModel = $scope.selectModel;
-                    
+
+                    keyChange = false;
                     
                     $timeout(function () {
                         
@@ -186,7 +209,24 @@ superSelect.directive( 'superSelect', function( ){
 
                 menuContainer.on( 'keydown', $scope.onKeydown );
 
-                isNearBottom = function ( boundingRect ) {
+                var resetKeyChangeTimeout = function() {
+
+                    keyChange = true;
+
+                    if( keyTimeout !== null ) {
+
+                        clearTimeout( keyTimeout );
+                    }
+
+                    keyTimeout = setTimeout( function(){
+                        
+                        keyChange = false;
+                        keyTimeout = null;
+
+                    }, keyTimeoutLength );
+                }
+
+                var isNearBottom = function ( boundingRect ) {
 
                     var windowHeight = $window.innerHeight,
                         scrollTop = document.body.scrollTop;
@@ -226,8 +266,15 @@ superSelect.directive( 'superSelect', function( ){
                             next = currentOption.previousSibling;
                         } 
                         else {
+                            
+                            if( $element[0].querySelector( '.fakeSelect' ) ) {
 
-                            next = currentOption;//$element[0].querySelector( '.fakeSelect option[value="' + $element[0].querySelector( '.fakeSelect' ).value + '"]' );;
+                                next = $element[0].querySelector( '.fakeSelect option[value="' + $element[0].querySelector( '.fakeSelect' ).value + '"]' );
+
+                            } else {
+
+                                next = currentOption;    
+                            }
                         }
 
                         if( next ) {
