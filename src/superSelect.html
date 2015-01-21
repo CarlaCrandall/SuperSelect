@@ -12,7 +12,7 @@
                 class="btn btn-primary dropdown-toggle" 
                 ng-disabled="selectDisabled"
                 ng-focus="populateSelect(true)">
-            {{selectData[selectModel]}} 
+            {{dictionary[selectModel]}} 
         </button>
         <span class="caret"></span>
     </span>
@@ -23,7 +23,7 @@
             ng-keyup="onKeyup( $event )"
             ng-focus="onSelectFocus()" 
             ng-model="selectModel" 
-            ng-options="val as text for ( val, text ) in realData">
+            ng-options="item.val as item.label for item in realData">
     </select>
     <!-- End Select -->
 
@@ -31,17 +31,18 @@
     <select ng-if="status.isOpen"
             class="fakeSelect"
             ng-model="fakeModel"
-            ng-options="val as text for ( val, text ) in selectData">
+            ng-options="item.val as item.label for item in sanitizedData">
     </select>
     <!-- End Select -->
 
     <!-- Dropdown Menu -->
     <ul class="dropdown-menu" role="menu" ng-if="status.isOpen">
         <li class="search-option" 
-            ng-repeat="(val, text) in selectData" 
-            ng-attr-data-option="{{val}}"  
-            ng-click="selectOption(val)">
-            <a href="#" ng-bind="text"></a>
+            ng-repeat="item in sanitizedData" 
+            ng-attr-data-option="{{item.val}}"
+            ng-attr-data-index="{{$index}}"  
+            ng-click="selectOption(item.val)">
+            <a href="#" ng-bind="item.label"></a>
         </li>
     </ul>
     <!-- End Dropdown Menu -->
