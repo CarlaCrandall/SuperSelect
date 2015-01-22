@@ -67,6 +67,30 @@ describe( 'Test Super Select', function(){
 
         }));
 
+        it( 'should replace the test data with an array version and still work',
+        angular.mock.inject( function() {
+
+            $scope.testData = [
+                {val: 'Test0', label: 'Test Item 0'},
+                {val: 'Test1', label: 'Different Label'},
+                {val: 'Test2', label: 'Example Test Item 2'},
+                {val: 'Test3', label: 'Other Test Item 3'}
+            ];
+
+            var element = angular.element( template[0].querySelectorAll( '.dropdown-toggle' ) );
+
+            var isoScope = template.isolateScope();
+            
+            expect( template.find( 'ul' ).length ).toBe( 0 );
+
+            // open the select box to allow it top populate
+            isoScope.status.isOpen = true;
+            isoScope.$apply();
+
+            expect( element.html().trim() ).toBe( isoScope.sanitizedData[ 1 ].label );
+
+        }));
+
         
     });
 
