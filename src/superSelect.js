@@ -1,4 +1,4 @@
-var superSelect = angular.module( 'superSelect', [] );
+var superSelect = angular.module( 'superSelect', [ 'ui.bootstrap'] );
 
 superSelect.directive( 'superSelect', function( ){
     return {
@@ -50,6 +50,10 @@ superSelect.directive( 'superSelect', function( ){
             controller: [ '$scope', '$element', '$timeout', '$window', 
             
                 function( $scope, $element, $timeout, $window ) {
+
+                var selectHeight = 30,
+                    isScrollable = false,
+                    lockedScrollTop = 0;
 
                 $scope.fakeModel = '';
                 $scope.realData = [];
@@ -275,18 +279,20 @@ superSelect.directive( 'superSelect', function( ){
 
                             var isUp = isNearBottom( boundingRect );
 
+                            var dropInfo = calculateDropInfo( boundingRect );
+
                             if( isUp ) {
 
                                 dropdownContainer.addClass( 'dropup' );
 
                                 $timeout( function () { 
-                                    setMenuPosition( menu[ 0 ] );
+                                    setMenuPosition( menu[ 0 ], dropInfo );
                                     dropdownContainer.removeClass( 'dropup' );
                                 });
                             }
                             else {
 
-                                setMenuPosition( menu[ 0 ] );
+                                setMenuPosition( menu[ 0 ], dropInfo );
                             }
                             
                             
@@ -297,6 +303,22 @@ superSelect.directive( 'superSelect', function( ){
 
 
                 menuContainer.on( 'keydown', $scope.onKeydown );
+
+                var manageScrolling = function( event) {
+                    
+                    if( isScrollable ) {
+
+                        event.stopPropagation();
+                        event.stopImmediatePropagation();
+
+                        menuContainer[0].scrollTop += event.wheelDeltaY*0.2;
+                        
+                        return false;
+                    }
+                }
+
+                menuContainer.on( 'wheel', manageScrolling );
+                
 
                 var resetKeyChangeTimeout = function() {
 
@@ -315,27 +337,71 @@ superSelect.directive( 'superSelect', function( ){
                     }, keyTimeoutLength );
                 }
 
+                var calculateDropInfo = function( boundingRect ) {
+
+                    var windowHeight = $window.innerHeight,
+                        scrollTop = document.body.scrollTop,
+                        windowWidth = $window.innerWidth,
+                        scrollLeft = document.body.scrollLeft,
+                        dropInfo = {
+                            openUp: false,
+                            showScroll: false,
+                            fromRight: false,
+                            renderHeight: false
+                        },
+                        topDifference = boundingRect.top - scrollTop - selectHeight,
+                        bottomDifference = windowHeight - topDifference - selectHeight,
+                        renderHeight = bottomDifference;
+
+                    if( boundingRect.bottom > windowHeight + scrollTop && topDifference > bottomDifference ) {
+
+                        renderHeight = topDifference; 
+                        dropInfo.openUp = true;
+                    }
+
+                    if( windowWidth - boundingRect.right  ){
+                        
+                        dropInfo.fromRight = true;
+                    }
+                    if( boundingRect.height > renderHeight ) {
+
+                        dropInfo.showScroll = true;
+                        dropInfo.renderHeight = renderHeight; 
+                    }
+
+                    return dropInfo;
+                }
+
                 var isNearBottom = function ( boundingRect ) {
 
                     var windowHeight = $window.innerHeight,
                         scrollTop = document.body.scrollTop;
 
                     if( boundingRect.bottom > windowHeight + scrollTop ) {
-                        return true;
+                        // return true;
                     }
 
                     return false;
                 }
 
-                var setMenuPosition = function ( menu ) {
+                var setMenuPosition = function ( menu, dropInfo ) {
                     var boundingRect = menu.getBoundingClientRect();
-                    menuContainer.append( menu );
-                    menuContainer.css({
-                        'top' : boundingRect.top + 'px',
-                        'left' : boundingRect.left + 'px'
-                    })
 
-                   setFocus( 0 );
+
+                    menuContainer.append( menu );
+                    menuContainer.css( {
+
+                            'top' : boundingRect.top + 'px',
+                            'left' : dropInfo.fromRight? '' : boundingRect.left + 'px',
+                            'right' : dropInfo.fromRight ? '0' : '',
+                            'overflow' : dropInfo.showScroll? 'scroll' : '',
+                            'height' : dropInfo.showScroll? dropInfo.renderHeight + 'px' : ''
+                        } );
+
+                    isScrollable = dropInfo.showScroll;
+                    lockedScrollTop = document.body.scrollTop;
+
+                    setFocus( 0 );
                 }
 
 
@@ -399,14 +465,13 @@ superSelect.directive( 'superSelect', function( ){
             compile : function ( element, attrs ) {
 
                 if( document && 
-                    document.body && 
-                    document.body.getElementById && 
-                    !document.body.getElementById( 'superSelect_dropdownHolder') ) {
+                    document.getElementById && 
+                    !document.getElementById( 'superSelect_dropdownHolder') ) {
 
                     var dropdownHolder = document.createElement( 'div' );
                     dropdownHolder.setAttribute( 'id', 'superSelect_dropdownHolder' );
 
-                    document.body.append( 'superSelect_dropdownHolder' );
+                    document.body.append( dropdownHolder );
 
                 }
 
