@@ -311,7 +311,9 @@ superSelect.directive( 'superSelect', function( ){
                         event.stopPropagation();
                         event.stopImmediatePropagation();
 
-                        menuContainer.find( 'ul' )[ 0 ].scrollTop += event.wheelDeltaY*0.2;
+                        // TODO:Wheel amount needs to be normalized
+                        // http://stackoverflow.com/questions/5527601/normalizing-mousewheel-speed-across-browsers
+                        menuContainer.find( 'ul' )[ 0 ].scrollTop -= event.wheelDeltaY*0.2;
                      
                         return false;   
                         
