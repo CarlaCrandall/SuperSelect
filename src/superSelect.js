@@ -311,13 +311,17 @@ superSelect.directive( 'superSelect', function( ){
                         event.stopPropagation();
                         event.stopImmediatePropagation();
 
-                        menuContainer[0].scrollTop += event.wheelDeltaY*0.2;
+                        menuContainer.find( 'ul' )[ 0 ].scrollTop += event.wheelDeltaY*0.2;
+                     
+                        return false;   
                         
-                        return false;
                     }
                 }
 
-                menuContainer.on( 'wheel', manageScrolling );
+                if( !menuContainer.attr( 'hasScroll') ) {
+                    menuContainer.attr( 'hasScroll', true );
+                    menuContainer[0].onwheel = manageScrolling ;
+                }
                 
 
                 var resetKeyChangeTimeout = function() {
@@ -393,10 +397,13 @@ superSelect.directive( 'superSelect', function( ){
 
                             'top' : boundingRect.top + 'px',
                             'left' : dropInfo.fromRight? '' : boundingRect.left + 'px',
-                            'right' : dropInfo.fromRight ? '0' : '',
-                            'overflow' : dropInfo.showScroll? 'scroll' : '',
-                            'height' : dropInfo.showScroll? dropInfo.renderHeight + 'px' : ''
+                            'right' : dropInfo.fromRight ? '0' : ''
                         } );
+
+                    menuContainer.find( 'ul' ).css({
+                        'overflow' : dropInfo.showScroll? 'scroll' : '',
+                        'height' : dropInfo.showScroll? dropInfo.renderHeight + 'px' : ''
+                    })
 
                     isScrollable = dropInfo.showScroll;
                     lockedScrollTop = document.body.scrollTop;
@@ -471,7 +478,7 @@ superSelect.directive( 'superSelect', function( ){
                     var dropdownHolder = document.createElement( 'div' );
                     dropdownHolder.setAttribute( 'id', 'superSelect_dropdownHolder' );
 
-                    document.body.append( dropdownHolder );
+                    document.body.appendChild( dropdownHolder );
 
                 }
 
