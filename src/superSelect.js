@@ -4,7 +4,43 @@ superSelect.directive( 'superSelect', function( ){
     return {
             
             restrict: 'A',
-            templateUrl: 'src/superSelect.html',
+            template: 
+            '<div is-open="status.isOpen" ' + 
+            '        ng-keydown="onKeydown( $event )"  ' + 
+            '        class="super-select btn-group dropdown-container" ' + 
+            '        dropdown ' + 
+            '        on-toggle="onOpen()">' + 
+            '    <span class="button-span" dropdown-toggle' + 
+            '                ng-class="{ disabled : selectDisabled }">' + 
+            '        <button type="button" ' + 
+            '                class="btn btn-primary dropdown-toggle" ' + 
+            '                ng-disabled="selectDisabled"' + 
+            '                ng-focus="populateSelect(true)"' + 
+            '                ng-bind="dictionary[selectModel]">' + 
+            '        </button>' + 
+            '        <span class="caret"></span>' + 
+            '    </span>' + 
+            '    <select class="realSelect"' + 
+            '            ng-keyup="onKeyup( $event )"' + 
+            '            ng-focus="onSelectFocus()" ' + 
+            '            ng-model="selectModel" ' + 
+            '            ng-options="item.val as item.label for item in realData">' + 
+            '    </select>' + 
+            '    <select ng-if="status.isOpen"' + 
+            '            class="fakeSelect"' + 
+            '            ng-model="fakeModel"' + 
+            '            ng-options="item.val as item.label for item in sanitizedData">' + 
+            '    </select>' + 
+            '    <ul class="dropdown-menu" role="menu" ng-if="status.isOpen">' + 
+            '        <li class="search-option" ' + 
+            '            ng-repeat="item in sanitizedData" ' + 
+            '            ng-attr-data-option="{{item.val}}"' + 
+            '            ng-attr-data-index="{{$index}}"  ' + 
+            '            ng-click="selectOption(item.val)">' + 
+            '            <a href="#" ng-bind="item.label"></a>' + 
+            '        </li>' + 
+            '    </ul>' + 
+            '</div>',
             scope: {
                 selectData: '=',
                 selectModel: '=',

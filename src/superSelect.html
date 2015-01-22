@@ -11,8 +11,8 @@
         <button type="button" 
                 class="btn btn-primary dropdown-toggle" 
                 ng-disabled="selectDisabled"
-                ng-focus="populateSelect(true)">
-            {{dictionary[selectModel]}} 
+                ng-focus="populateSelect(true)"
+                ng-bind="dictionary[selectModel]">
         </button>
         <span class="caret"></span>
     </span>
