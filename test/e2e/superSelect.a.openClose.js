@@ -1,6 +1,5 @@
 describe('Opening and Closing Dropdown', function(){
 
-    return;
     beforeEach(function() {
         // This needs to be mapped to the virtual host or dev environment we're using
         browser.get('http://localhost:9999/example.html');

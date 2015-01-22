@@ -1,7 +1,5 @@
 describe('Pressing Arrow Keys in the dropdown', function(){
 
-    return;
-
     var selectContainer,
             selectButton,
             activeEle;
