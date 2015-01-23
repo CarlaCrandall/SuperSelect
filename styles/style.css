@@ -7,6 +7,8 @@
 	top:0;
 	right:100%;
 	opacity:0;
+	width: 0px;
+	height: 1px;
 }
 
 .super-select.dropdown-container {
@@ -55,8 +57,8 @@
 }
 
 #superSelect_dropdownHolder {
-	position: absolute;
-	z-index: 9999999973;
+	position: fixed;
+	z-index: 9999999999;
 }
 
 #superSelect_dropdownHolder .dropdown-menu {

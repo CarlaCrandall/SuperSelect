@@ -37,7 +37,7 @@ superSelect.directive( 'superSelect', function( ){
             '            ng-attr-data-option="{{item.val}}"' + 
             '            ng-attr-data-index="{{$index}}"  ' + 
             '            ng-click="selectOption(item.val)">' + 
-            '            <a href="#" ng-bind="item.label"></a>' + 
+            '            <a href="javascript:void(0)" ng-bind="item.label"></a>' + 
             '        </li>' + 
             '    </ul>' + 
             '</div>',
@@ -145,7 +145,8 @@ superSelect.directive( 'superSelect', function( ){
                     var e = $event,
                         $target = e.target,
                         nextTab,
-                        runFocus = false;
+                        runFocus = false,
+                        bubbleEvent = true;
 
                     switch ( e.keyCode ) {
 
@@ -187,20 +188,6 @@ superSelect.directive( 'superSelect', function( ){
 
                                 break;
 
-                            case KeyCodes.UPARROW:
-
-                                if( !$scope.status.isOpen ) {
-                                
-                                    $scope.status.isOpen = true;
-                                    $scope.status.currentVal = $scope.selectModel;
-                                
-                                } else {
-                                
-                                    nextTab = - 1;
-                                }
-
-                                runFocus = true;
-                                break;
 
                             case KeyCodes.RETURNKEY: 
 
@@ -213,20 +200,27 @@ superSelect.directive( 'superSelect', function( ){
                                         $element.find( 'button' )[0].focus();
                                     }, 100);
                                 }
+
                                 break;
+
+                            case KeyCodes.UPARROW:
+
+                                    nextTab = - 1;
 
                             case KeyCodes.DOWNARROW:
                                 
                                 if( !$scope.status.isOpen ) {
                                 
-                                    $scope.status.isOpen = true;
                                     $scope.status.currentVal = $scope.selectModel;
+                                    $scope.status.isOpen = true;
+                                    $scope.onOpen();
 
-                                } else {                          
+                                } else if ( nextTab !== -1 ) {                          
                                 
                                     nextTab = 1;
                                 }
 
+                                bubbleEvent = false;
                                 runFocus = true;
                                 break;
 
@@ -252,6 +246,11 @@ superSelect.directive( 'superSelect', function( ){
 
                         setFocus( nextTab );
                     }
+                    if( !bubbleEvent ) {
+
+                        e.preventDefault();
+                    }
+                    return bubbleEvent;
                 }
 
                 $scope.onOpen = function() {
@@ -275,17 +274,16 @@ superSelect.directive( 'superSelect', function( ){
 
                             var menu = angular.element($element[0].querySelectorAll( '.dropdown-menu' ));
 
-                            var boundingRect = menu[0].getBoundingClientRect();
-
-                            var isUp = isNearBottom( boundingRect );
+                            var boundingRect = menu[0] && menu[0].getBoundingClientRect() || {};
 
                             var dropInfo = calculateDropInfo( boundingRect );
 
-                            if( isUp ) {
+                            if( dropInfo.openUp ) {
 
                                 dropdownContainer.addClass( 'dropup' );
 
                                 $timeout( function () { 
+
                                     setMenuPosition( menu[ 0 ], dropInfo );
                                     dropdownContainer.removeClass( 'dropup' );
                                 });
@@ -302,28 +300,50 @@ superSelect.directive( 'superSelect', function( ){
                 }
 
 
-                menuContainer.on( 'keydown', $scope.onKeydown );
+                menuContainer.on( 'keydown', function( e ){
 
-                var manageScrolling = function( event) {
-                    
-                    if( isScrollable ) {
-
-                        event.stopPropagation();
-                        event.stopImmediatePropagation();
-
-                        // TODO:Wheel amount needs to be normalized
-                        // http://stackoverflow.com/questions/5527601/normalizing-mousewheel-speed-across-browsers
-                        menuContainer.find( 'ul' )[ 0 ].scrollTop -= event.wheelDeltaY*0.2;
-                     
-                        return false;   
-                        
+                    //only fire if this menu is open
+                    if( $scope.status.isOpen ) {
+                        $scope.onKeydown( e );
                     }
+                
+                });
+
+                var manageScrolling = function( event ) {
+                    
+                    var o = event,
+                        d = o.detail, w = o.wheelDelta,
+                        n = 225, n1 = n-1;
+
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
+
+                    // http://stackoverflow.com/questions/5527601/normalizing-mousewheel-speed-across-browsers
+                    // Normalize delta
+                    d = d ? w && (f = w/d) ? d/f : -d/1.35 : w/120;
+                    // Quadratic scale if |d| > 1
+                    d = d < 1 ? d < -1 ? (-Math.pow(d, 2) - n1) / n : d : (Math.pow(d, 2) + n1) / n;
+                    // Delta *should* not be greater than 2...
+                    delta = Math.min(Math.max(d / 2, -1), 1);
+
+
+                    menuContainer.find( 'ul' )[ 0 ].scrollTop -= delta*100;
+                 
+                    return false;   
+                    
                 }
 
                 if( !menuContainer.attr( 'hasScroll') ) {
                     menuContainer.attr( 'hasScroll', true );
                     menuContainer[0].onwheel = manageScrolling ;
                 }
+                angular.element( document.body ).on( 'mousewheel', function(){
+                    
+                    if( $scope.status.isOpen ) {
+                        $scope.status.isOpen = false; 
+                        $scope.$digest();
+                    }
+                });
                 
 
                 var resetKeyChangeTimeout = function() {
@@ -355,8 +375,8 @@ superSelect.directive( 'superSelect', function( ){
                             fromRight: false,
                             renderHeight: false
                         },
-                        topDifference = boundingRect.top - scrollTop - selectHeight,
-                        bottomDifference = windowHeight - topDifference - selectHeight,
+                        topDifference = boundingRect.top - selectHeight,
+                        bottomDifference = windowHeight - topDifference - selectHeight* 1.25,
                         renderHeight = bottomDifference;
 
                     if( boundingRect.bottom > windowHeight + scrollTop && topDifference > bottomDifference ) {
@@ -365,6 +385,7 @@ superSelect.directive( 'superSelect', function( ){
                         dropInfo.openUp = true;
                     }
 
+                    
                     if( windowWidth - boundingRect.right  ){
                         
                         dropInfo.fromRight = true;
@@ -391,15 +412,18 @@ superSelect.directive( 'superSelect', function( ){
                 }
 
                 var setMenuPosition = function ( menu, dropInfo ) {
+                    if( !menu ) {
+                        return;
+                    }
                     var boundingRect = menu.getBoundingClientRect();
 
 
                     menuContainer.append( menu );
                     menuContainer.css( {
 
-                            'top' : boundingRect.top + 'px',
+                            'top' : boundingRect.top < 0? '0px' : boundingRect.top + 'px' ,
                             'left' : dropInfo.fromRight? '' : boundingRect.left + 'px',
-                            'right' : dropInfo.fromRight ? '0' : ''
+                            'right' : dropInfo.fromRight ? '5px' : ''
                         } );
 
                     menuContainer.find( 'ul' ).css({
