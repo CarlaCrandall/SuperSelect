@@ -28,6 +28,12 @@
                 'Test2' : 'Example Test Item 2',
                 'Test3' : 'Other Test Item 3'
             }
+            $scope.testData2 = {
+                'Test0' : 'TEEEEest Item 0',
+                'Test1' : 'AnotDDDDher Test Item 1',
+                'Test2' : 'ExamplEEEEEe Test Item 2',
+                'Test3' : 'Other TestGEGE Item 3'
+            }
             // $scope.testData = [
             //     {val: 'Test0', label: 'Test Item 0'},
             //     {val: 'Test1', label: 'Another Test Item 1'},
@@ -35,6 +41,7 @@
             //     {val: 'Test3', label: 'Other Test Item 3'}
             // ]
             $scope.dataModel = 'Test1';
+            $scope.dataModel2 = 'Test2';
 
         });
     </script>
@@ -45,6 +52,8 @@
     <h1>Super Select Example</h1>
 
     <span super-select select-data="testData" select-model="dataModel" select-label="test" select-disabled="false"></span>
+
+    <span super-select select-data="testData2" select-model="dataModel2" select-label="test" select-disabled="false"></span>
 
     <div id="superSelect_dropdownHolder"></div>
 

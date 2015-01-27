@@ -7,35 +7,34 @@ superSelect.directive( 'superSelect', function( ){
             template: 
             '<div is-open="status.isOpen" ' + 
             '        ng-keydown="onKeydown( $event )"  ' + 
-            '        class="super-select btn-group dropdown-container" ' + 
+            '        class="super-select dropdown-container" ' + 
             '        dropdown ' + 
-            '        on-toggle="onOpen()">' + 
+            '        on-toggle="onToggle()">' + 
             '    <span class="button-span" dropdown-toggle' + 
+            '                ng-click="populateSelect(true)"' + 
             '                ng-class="{ disabled : selectDisabled }">' + 
             '        <button type="button" ' + 
             '                class="btn btn-primary dropdown-toggle" ' + 
             '                ng-disabled="selectDisabled"' + 
             '                ng-focus="populateSelect(true)"' + 
-            '                ng-bind="dictionary[selectModel]">' + 
+            '                ng-bind="dictionary[selectModel].label">' + 
             '        </button>' + 
             '        <span class="caret"></span>' + 
             '    </span>' + 
-            '    <select class="realSelect"' + 
+            '    <select class="realSelect" tabindex="-1"' + 
             '            ng-keyup="onKeyup( $event )"' + 
-            '            ng-focus="onSelectFocus()" ' + 
-            '            ng-model="selectModel" ' + 
-            '            ng-options="item.val as item.label for item in realData">' + 
+            '            ng-model="realModel" ' + 
+            '            ng-options="item.label for item in realData track by item.val">' + 
             '    </select>' + 
-            '    <select ng-if="status.isOpen"' + 
-            '            class="fakeSelect"' + 
+            '    <select class="fakeSelect" tabindex="-1"' + 
+            '            ng-if="status.isOpen"' + 
             '            ng-model="fakeModel"' + 
-            '            ng-options="item.val as item.label for item in sanitizedData">' + 
+            '            ng-options="item.label for item in sanitizedData track by item.val">' + 
             '    </select>' + 
-            '    <ul class="dropdown-menu" role="menu" ng-if="status.isOpen">' + 
+            '    <ul class="dropdown-menu" role="menu" ng-if="realData.length">' + 
             '        <li class="search-option" ' + 
             '            ng-repeat="item in sanitizedData" ' + 
             '            ng-attr-data-option="{{item.val}}"' + 
-            '            ng-attr-data-index="{{$index}}"  ' + 
             '            ng-click="selectOption(item.val)">' + 
             '            <a href="javascript:void(0)" ng-bind="item.label"></a>' + 
             '        </li>' + 
@@ -50,21 +49,29 @@ superSelect.directive( 'superSelect', function( ){
             controller: [ '$scope', '$element', '$timeout', '$window', 
             
                 function( $scope, $element, $timeout, $window ) {
+                var menuContainer = angular.element( document.querySelector( '#superSelect_dropdownHolder' ) ),
+                    KeyCodes = {
+                        BACKSPACE : 8,
+                        TABKEY : 9,
+                        SHIFT: 16,
+                        RETURNKEY : 13,
+                        ESCAPE : 27,
+                        SPACEBAR : 32,
+                        LEFTARROW : 37,
+                        UPARROW : 38,
+                        RIGHTARROW : 39,
+                        DOWNARROW : 40,
+                    },
+                    keyChange = false,
+                    keyTimeout = null
+                    keyTimeoutLength = 1000,
+                    selectHeight = 30;
 
-                var selectHeight = 30,
-                    isScrollable = false,
-                    lockedScrollTop = 0;
-
-                $scope.fakeModel = '';
+                //Create pseudo model data to be used by the select boxes
+                $scope.fakeModel = null;
+                $scope.realModel = null;
                 $scope.realData = [];
-
                 $scope.sanitizedData = [];
-
-                $scope.status = {
-                    isOpen: false,
-                    currentVal: null
-                }
-
                 $scope.dictionary = {};
 
                 // Converts key value object into an array and updates the label dictionary if needed
@@ -92,7 +99,7 @@ superSelect.directive( 'superSelect', function( ){
 
                     for( i = 0, len = $scope.sanitizedData.length; i < len; ++i ) {
 
-                        $scope.dictionary[ $scope.sanitizedData[ i ].val ] = $scope.sanitizedData[ i ].label;
+                        $scope.dictionary[ $scope.sanitizedData[ i ].val ] = $scope.sanitizedData[ i ];
                     }
 
                     if( $scope.realData.length ) {
@@ -100,206 +107,17 @@ superSelect.directive( 'superSelect', function( ){
                         $scope.realData = $scope.sanitizedData;
                     }
 
+                    $scope.realModel = $scope.dictionary[ $scope.selectModel ];
+
                 });
 
-                var KeyCodes = {
-                        BACKSPACE : 8,
-                        TABKEY : 9,
-                        SHIFT: 16,
-                        RETURNKEY : 13,
-                        ESCAPE : 27,
-                        SPACEBAR : 32,
-                        LEFTARROW : 37,
-                        UPARROW : 38,
-                        RIGHTARROW : 39,
-                        DOWNARROW : 40,
-                    },
-                    menuContainer = angular.element( document.querySelector( '#superSelect_dropdownHolder' ) ),
-                    keyChange = false,
-                    keyTimeout = null
-                    keyTimeoutLength = 1000;
-
-                
-                $scope.selectOption = function( val ) {
-
-                    $scope.selectModel = val;
+                $scope.status = {
+                    isOpen: false,
+                    currentVal: null
                 }
 
-                $scope.populateSelect = function( focus ) {
-
-                    $scope.realData = $scope.sanitizedData;
-                }
-
-                $scope.onKeyup = function( $event ) {
-
-                    if( !$scope.status.isOpen ) {
-
-                        $timeout( function () { 
-                            $element.find( 'button' )[0].focus();
-                        } );
-                    }
-                }
-
-                $scope.onKeydown = function( $event ) {
-
-                    var e = $event,
-                        $target = e.target,
-                        nextTab,
-                        runFocus = false,
-                        bubbleEvent = true;
-
-                    switch ( e.keyCode ) {
-
-                            case KeyCodes.TABKEY:
-                                
-                                if( $scope.status.isOpen ) {
-                                
-                                    $event.preventDefault();
-                                    
-                                }
-                                break;
-                            case KeyCodes.SHIFT:
-                                break;
-                            //Make sure the spacebar doesn't activate the select
-                            case KeyCodes.SPACEBAR: 
-
-                                if( $scope.status.isOpen ) {
-                                    if( !keyChange ) {
-
-                                        $scope.status.isOpen = false;
-                                        $scope.selectModel = $scope.status.currentVal;
-                                        $timeout( function () {
-                                            $element.find( 'button' )[0].focus();
-                                        }, 100);
-                                    
-                                    } else {
-
-                                        resetKeyChangeTimeout();
-                                    }
-                                }
-
-                                break;
-
-                            case KeyCodes.ESCAPE:
-
-                                $timeout( function () {
-                                    $element.find( 'button' )[0].focus();
-                                }, 100);
-
-                                break;
-
-
-                            case KeyCodes.RETURNKEY: 
-
-                                if( $scope.status.isOpen ) {
-                                
-                                    $scope.status.isOpen = false;
-                                    $scope.selectModel = $scope.status.currentVal;
-                                        
-                                    $timeout( function () {
-                                        $element.find( 'button' )[0].focus();
-                                    }, 100);
-                                }
-
-                                break;
-
-                            case KeyCodes.UPARROW:
-
-                                    nextTab = - 1;
-
-                            case KeyCodes.DOWNARROW:
-                                
-                                if( !$scope.status.isOpen ) {
-                                
-                                    $scope.status.currentVal = $scope.selectModel;
-                                    $scope.status.isOpen = true;
-                                    $scope.onOpen();
-
-                                } else if ( nextTab !== -1 ) {                          
-                                
-                                    nextTab = 1;
-                                }
-
-                                bubbleEvent = false;
-                                runFocus = true;
-                                break;
-
-                            default: 
-
-                                if( !$scope.status.isOpen ) {
-
-                                    $element[0].querySelector( '.realSelect' ).focus();
-                                }
-                                else {
-
-                                    resetKeyChangeTimeout();
-
-                                    $element[0].querySelector( '.fakeSelect' ).focus();
-
-                                    runFocus = true;
-                                }
-                                
-                                break; 
-                    }
-
-                    if( runFocus ) {
-
-                        setFocus( nextTab );
-                    }
-                    if( !bubbleEvent ) {
-
-                        e.preventDefault();
-                    }
-                    return bubbleEvent;
-                }
-
-                $scope.onOpen = function() {
-                    $scope.status.currentVal = $scope.selectModel;
-                    $scope.fakeModel = $scope.selectModel;
-
-                    keyChange = false;
-
-                    $timeout(function () {
-                        
-                        var dropdownContainer = angular.element($element[0].querySelector( '.dropdown-container' ));
-
-
-                        if( !$scope.status.isOpen ) {
-
-                            var menu = menuContainer.children();
-                            dropdownContainer.append( menu );
-
-                        }
-                        else {
-
-                            var menu = angular.element($element[0].querySelectorAll( '.dropdown-menu' ));
-
-                            var boundingRect = menu[0] && menu[0].getBoundingClientRect() || {};
-
-                            var dropInfo = calculateDropInfo( boundingRect );
-
-                            if( dropInfo.openUp ) {
-
-                                dropdownContainer.addClass( 'dropup' );
-
-                                $timeout( function () { 
-
-                                    setMenuPosition( menu[ 0 ], dropInfo );
-                                    dropdownContainer.removeClass( 'dropup' );
-                                });
-                            }
-                            else {
-
-                                setMenuPosition( menu[ 0 ], dropInfo );
-                            }
-                            
-                            
-                            
-                        }
-                    });
-                }
-
-
+                // Transfer the keypresses from 
+                // the menu container to the menu list
                 menuContainer.on( 'keydown', function( e ){
 
                     //only fire if this menu is open
@@ -333,10 +151,15 @@ superSelect.directive( 'superSelect', function( ){
                     
                 }
 
-                if( !menuContainer.attr( 'hasScroll') ) {
-                    menuContainer.attr( 'hasScroll', true );
+                //On wheel event needs to be added manually due to issue in chrome
+                if( !menuContainer.attr( 'data-has-scroll') ) {
+
+                    menuContainer.attr( 'data-has-scroll', true );
                     menuContainer[0].onwheel = manageScrolling ;
+                
                 }
+
+                //When the user scrolls in the body hide the select if it's open
                 angular.element( document.body ).on( 'mousewheel', function(){
                     
                     if( $scope.status.isOpen ) {
@@ -344,7 +167,6 @@ superSelect.directive( 'superSelect', function( ){
                         $scope.$digest();
                     }
                 });
-                
 
                 var resetKeyChangeTimeout = function() {
 
@@ -365,50 +187,39 @@ superSelect.directive( 'superSelect', function( ){
 
                 var calculateDropInfo = function( boundingRect ) {
 
-                    var windowHeight = $window.innerHeight,
-                        scrollTop = document.body.scrollTop,
-                        windowWidth = $window.innerWidth,
-                        scrollLeft = document.body.scrollLeft,
+                    var scrollTop = document.body.scrollTop,
+                        topDifference = boundingRect.top - selectHeight,
+                        bottomDifference = $window.innerHeight - topDifference - selectHeight * 1.25,
+                        renderHeight = bottomDifference,
                         dropInfo = {
                             openUp: false,
                             showScroll: false,
                             fromRight: false,
                             renderHeight: false
-                        },
-                        topDifference = boundingRect.top - selectHeight,
-                        bottomDifference = windowHeight - topDifference - selectHeight* 1.25,
-                        renderHeight = bottomDifference;
+                        };
 
-                    if( boundingRect.bottom > windowHeight + scrollTop && topDifference > bottomDifference ) {
+                    //If there's more space above the select and we need more tell it to open upwards 
+                    if( boundingRect.bottom > $window.innerHeight + scrollTop && topDifference > bottomDifference ) {
 
                         renderHeight = topDifference; 
                         dropInfo.openUp = true;
                     }
 
-                    
-                    if( windowWidth - boundingRect.right  ){
-                        
-                        dropInfo.fromRight = true;
-                    }
+                    //If there's still not enough vertical space to render add scrollbars 
                     if( boundingRect.height > renderHeight ) {
 
                         dropInfo.showScroll = true;
                         dropInfo.renderHeight = renderHeight; 
                     }
 
-                    return dropInfo;
-                }
-
-                var isNearBottom = function ( boundingRect ) {
-
-                    var windowHeight = $window.innerHeight,
-                        scrollTop = document.body.scrollTop;
-
-                    if( boundingRect.bottom > windowHeight + scrollTop ) {
-                        // return true;
+                    
+                    //Make sure the select options aren't flowing out of the screen
+                    if( $window.innerWidth - boundingRect.right < 0  ){
+                        
+                        dropInfo.fromRight = true;
                     }
 
-                    return false;
+                    return dropInfo;
                 }
 
                 var setMenuPosition = function ( menu, dropInfo ) {
@@ -431,24 +242,19 @@ superSelect.directive( 'superSelect', function( ){
                         'height' : dropInfo.showScroll? dropInfo.renderHeight + 'px' : ''
                     })
 
-                    isScrollable = dropInfo.showScroll;
-                    lockedScrollTop = document.body.scrollTop;
-
                     setFocus( 0 );
                 }
 
 
                 var setFocus = function( nextTab ) {
 
+                    //Allow for a digest so data can be populated before pulling information
                     $timeout( function () {
-
 
                         // Grab the current dropdown li and get it's index value, 
                         // then find the current select with the matching index value
                         var dropdownContainer = $element[0].querySelector( '.dropdown-container' ),
-                            optString = '[data-option="' + $scope.status.currentVal + '"]',
-                            menuOption = menuContainer[0].querySelector( optString ) || dropdownContainer.querySelector( optString  ),
-                            currentOption = $element[0].querySelector( '.fakeSelect option[value="' + menuOption.getAttribute('data-index') + '"]' ),
+                            currentOption = $element[0].querySelector( '.fakeSelect option[value="' + $scope.status.currentVal + '"]' ),
                             next = null;
 
                         // if tabing through find the next sibling
@@ -477,11 +283,12 @@ superSelect.directive( 'superSelect', function( ){
                         if( next ) {
 
                             // since all we have is the index value, find the li with the matching index to get it's model value
-                            optString = '[data-index="' + next.value + '"]';
+                            optString = '[data-option="' + next.value + '"]';
                             menuOption = angular.element( menuContainer[0].querySelector( optString ) || dropdownContainer.querySelector( optString ) );
 
                             // Use the newly focused element as our current value
-                            $scope.fakeModel = $scope.status.currentVal = menuOption.attr( 'data-option' );
+                            $scope.fakeModel = $scope.dictionary[ menuOption.attr( 'data-option' ) ];
+                            $scope.status.currentVal = menuOption.attr( 'data-option' );
 
                             // find the relevent anchor and focus on it.
                             menuOption[0].querySelector( 'a' ).focus();    
@@ -492,13 +299,204 @@ superSelect.directive( 'superSelect', function( ){
 
                 }
 
-                
+
+                $scope.selectOption = function( val ) {
+
+                    $scope.selectModel = val;
+                    $scope.realModel = $scope.dictionary[ val ];
+                }
+
+                $scope.populateSelect = function( focus ) {
+
+                    $scope.realData = $scope.sanitizedData;
+                }
+
+                $scope.onKeyup = function( $event ) {
+
+                    if( !$scope.status.isOpen ) {
+
+                        $timeout( function () { 
+                            $element.find( 'button' )[0].focus();
+                        } );
+                    }
+                }
+
+                $scope.onKeydown = function( $event ) {
+
+                    var e = $event,
+                        $target = e.target,
+                        nextTab,
+                        runFocus = false,
+                        bubbleEvent = true;
+
+                    switch ( e.keyCode ) {
+
+
+                            case KeyCodes.SHIFT:
+                                break;
+
+                            case KeyCodes.ESCAPE:
+
+                                // Reset focus to the dropdown button
+                                // after the select has been closed
+                                $timeout( function () {
+                                    $element.find( 'button' )[0].focus();
+                                });
+                                break;
+
+                            case KeyCodes.TABKEY:
+                                
+                                if( $scope.status.isOpen ) {
+                                
+                                    $event.preventDefault();
+                                }
+                                break;
+
+                            case KeyCodes.SPACEBAR: 
+
+                                if( $scope.status.isOpen ) {
+                                    // if any non navigation keys are pressed we want to ignore the spacebar
+                                    // otherwise treat it as an enter key
+                                    if( !keyChange ) {
+
+                                        $scope.status.isOpen = false;
+                                        $scope.selectModel = $scope.status.currentVal;
+                                        $scope.realModel = $scope.dictionary[ $scope.status.currentVal ];
+
+                                        $timeout( function () {
+                                            $element.find( 'button' )[0].focus();
+                                        }, 100);
+                                    
+                                    } else {
+
+                                        resetKeyChangeTimeout();
+                                    }
+                                }
+
+                                break;
+
+                            case KeyCodes.RETURNKEY: 
+
+                                if( $scope.status.isOpen ) {
+                                
+                                    $scope.status.isOpen = false;
+                                    $scope.selectModel = $scope.status.currentVal;
+                                        
+                                    $timeout( function () {
+                                        $element.find( 'button' )[0].focus();
+                                    }, 100);
+                                }
+
+                                break;
+
+                            case KeyCodes.UPARROW:
+
+                                    nextTab = - 1;
+
+                                //No break needed, uses DOWNARROW code
+
+                            case KeyCodes.DOWNARROW:
+                                
+                                if( !$scope.status.isOpen ) {
+                                
+                                    $scope.status.currentVal = $scope.selectModel;
+                                    $scope.status.isOpen = true;
+                                    $scope.onToggle();
+
+                                } else if ( nextTab !== -1 ) {                          
+                                
+                                    nextTab = 1;
+                                }
+
+                                bubbleEvent = false;
+                                runFocus = true;
+                                break;
+
+                            default: 
+
+                                // If the dropdown is closed we want the real select 
+                                // box to handle non-navigation key presses
+                                if( !$scope.status.isOpen ) {
+
+                                    $element[0].querySelector( '.realSelect' ).focus();
+                                
+                                } else {
+
+                                    resetKeyChangeTimeout();
+
+                                    $element[0].querySelector( '.fakeSelect' ).focus();
+
+                                    runFocus = true;
+                                }
+                                
+                                break; 
+                    }
+
+                    if( runFocus ) {
+
+                        setFocus( nextTab );
+                    }
+                    if( !bubbleEvent ) {
+
+                        e.preventDefault();
+                    }
+                    return bubbleEvent;
+                }
+
+                $scope.onToggle = function() {
+                    $scope.status.currentVal = $scope.selectModel;
+                    $scope.fakeModel = $scope.dictionary[ $scope.selectModel ];
+
+                    keyChange = false;
+
+                    // Needed in order to get the correct
+                    //  bounding rectangle for the dropdown
+                    $timeout( function () {
+                        
+                        var dropdownContainer = angular.element($element[0].querySelector( '.dropdown-container' ));
+
+
+                        if( !$scope.status.isOpen ) {
+
+                            // Grab the first element, in case this 
+                            // happens while another select is opening
+                            var menu = menuContainer.children()[0];
+                            
+                            //remove possible overflow issues when calculating the bounding box
+                            angular.element( menu ).css({
+                                'overflow' : '',
+                                'height' : ''
+                            });
+                            dropdownContainer.append( menu );
+
+                        }
+                        else {
+
+                            var menu = $element[0].querySelector( '.dropdown-menu' ),
+                                boundingRect = menu && menu.getBoundingClientRect() || {},
+                                dropInfo = calculateDropInfo( boundingRect );
+
+                            // add the right classes if opening up
+                            if( dropInfo.openUp ) {
+
+                                dropdownContainer.addClass( 'dropup' );    
+                                setMenuPosition( menu, dropInfo );
+                                dropdownContainer.removeClass( 'dropup' );
+                            
+                            
+                            } else {
+
+                                setMenuPosition( menu, dropInfo );
+                            }
+                        }
+                    });
+                }
             } ],
 
             compile : function ( element, attrs ) {
 
+                // Make sure there's the overlay container in the body
                 if( document && 
-                    document.getElementById && 
                     !document.getElementById( 'superSelect_dropdownHolder') ) {
 
                     var dropdownHolder = document.createElement( 'div' );
@@ -514,4 +512,4 @@ superSelect.directive( 'superSelect', function( ){
                 }
             }
     }
-})
+});
